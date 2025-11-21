@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Tarefas Flexpro</title>
     
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%228%22 fill=%22%23007bff%22/><text x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22 font-weight=%22bold%22 font-size=%2230%22>PG</text></svg>">
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -111,7 +113,7 @@
 
         database.ref('tarefas').push(texto);
         input.value = ''; 
-        input.focus(); // Mantém o cursor no campo para digitar a próxima rápido
+        input.focus(); 
     }
 
     function removerTarefa(key) {
@@ -119,20 +121,19 @@
     }
 
     // -------------------------------------------------------
-    // 4. SISTEMA DE AVISOS E EVENTOS (ATUALIZADO COM ENTER)
+    // 4. SISTEMA DE AVISOS E EVENTOS (COM ENTER)
     // -------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', () => {
         pedirPermissaoNotificacao();
         setInterval(verificarHorarioFixo, 60000); 
 
-        // --- NOVIDADE: ATIVAR O ENTER ---
+        // CONFIGURAÇÃO DA TECLA ENTER
         const input = document.getElementById("inputTarefa");
         input.addEventListener("keypress", function(event) {
-            // Se a tecla for "Enter" (código 'Enter')
             if (event.key === "Enter") {
-                event.preventDefault(); // Evita comportamentos padrão estranhos
-                adicionarTarefa(); // Chama a função de salvar
+                event.preventDefault(); 
+                adicionarTarefa(); 
             }
         });
     });
