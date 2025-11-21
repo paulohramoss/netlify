@@ -121,14 +121,14 @@
     }
 
     // -------------------------------------------------------
-    // 4. SISTEMA DE AVISOS E EVENTOS (COM ENTER)
+    // 4. SISTEMA DE AVISOS E EVENTOS
     // -------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', () => {
         pedirPermissaoNotificacao();
         setInterval(verificarHorarioFixo, 60000); 
 
-        // CONFIGURAÇÃO DA TECLA ENTER
+        // ATIVAR O ENTER
         const input = document.getElementById("inputTarefa");
         input.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
@@ -156,8 +156,12 @@
         });
     }
 
+    // --- CORREÇÃO FEITA AQUI (FORMATAÇÃO DA LISTA) ---
     function enviarEmail(tarefasArray) {
-        const listaFormatada = tarefasArray.join("\n - ");
+        // .map adiciona "- " na frente de CADA item
+        // .join pula linha depois de cada item
+        const listaFormatada = tarefasArray.map(item => "- " + item).join("\n");
+
         const params = {
             to_email: EMAILS_DESTINO,
             message: listaFormatada,
