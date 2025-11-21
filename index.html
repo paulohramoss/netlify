@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Gestor FlexPro (Sincronizado)</title>
+    <title>Tarefas Flexpro</title>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -27,9 +27,9 @@
 <body>
 
 <div class="container">
-    <h2>Pendências FlexPro (Online)</h2>
+    <h2>Pendências Flexpro</h2>
     <div class="input-group">
-        <input type="text" id="inputTarefa" placeholder="Nova pendência para a equipa...">
+        <input type="text" id="inputTarefa" placeholder="Nova pendência para a equipe...">
         <button class="btn-add" onclick="adicionarTarefa()">Salvar</button>
     </div>
     
@@ -38,7 +38,7 @@
     </ul>
 
     <div class="status" id="statusSistema">Conectando ao Google...</div>
-    <button class="btn-test" onclick="forcarEnvioTeste()">Testar Envio Agora</button>
+    <button class="btn-test" onclick="forcarEnvioTeste()">Enviar Agora</button>
 </div>
 
 <audio id="somAlerta" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
@@ -52,7 +52,7 @@
     const EMAIL_SERVICE_ID = "service_9kks8zg";
     const EMAIL_TEMPLATE_ID = "template_6a9ug9r";
     const EMAIL_PUBLIC_KEY = "-da-dOnAwbnwjB6NB";
-    const EMAILS_DESTINO = "paulo@flexpro.com.br, glauber@flexpro.com.br";
+    const EMAILS_DESTINO = "paulo@Flexpro.com.br, glauber@Flexpro.com.br";
 
     // B) FIREBASE (COLE AQUI O CÓDIGO QUE COPIOU DO SITE)
     // Mantenha a estrutura "const firebaseConfig = { ... };"
