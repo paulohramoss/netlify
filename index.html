@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestor FlexPro (Sincronizado)</title>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 400px; }
+        h2 { text-align: center; color: #333; }
+        .input-group { display: flex; gap: 5px; }
+        input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-add { background-color: #28a745; }
+        .btn-add:hover { background-color: #218838; }
+        .btn-test { background-color: #007bff; width: 100%; margin-top: 10px; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #eee; margin: 5px 0; padding: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #007bff; }
+        .delete-btn { background-color: #dc3545; padding: 5px 10px; font-size: 12px; margin-left: 10px; }
+        .status { font-size: 11px; color: #666; text-align: center; margin-top: 10px; border-top: 1px solid #eee; padding-top:5px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Pendências FlexPro (Online)</h2>
+    <div class="input-group">
+        <input type="text" id="inputTarefa" placeholder="Nova pendência para a equipa...">
+        <button class="btn-add" onclick="adicionarTarefa()">Salvar</button>
+    </div>
+    
+    <ul id="listaTarefas">
+        <li style="text-align:center; color:#888;">A carregar lista da nuvem...</li>
+    </ul>
+
+    <div class="status" id="statusSistema">Conectando ao Google...</div>
+    <button class="btn-test" onclick="forcarEnvioTeste()">Testar Envio Agora</button>
+</div>
+
+<audio id="somAlerta" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script>
+    // -------------------------------------------------------
+    // 1. CONFIGURAÇÕES (PREENCHER COM ATENÇÃO)
+    // -------------------------------------------------------
+
+    // A) EMAILJS (Já configurado)
+    const EMAIL_SERVICE_ID = "service_9kks8zg";
+    const EMAIL_TEMPLATE_ID = "template_6a9ug9r";
+    const EMAIL_PUBLIC_KEY = "-da-dOnAwbnwjB6NB";
+    const EMAILS_DESTINO = "paulo@flexpro.com.br, glauber@flexpro.com.br";
+
+    // B) FIREBASE (COLE AQUI O CÓDIGO QUE COPIOU DO SITE)
+    // Mantenha a estrutura "const firebaseConfig = { ... };"
+const firebaseConfig = {
+  apiKey: "AIzaSyDQ8-KLCRRFFpW631LKj2r2ZX7B7QSpQ-I",
+  authDomain: "notas-homologacoes.firebaseapp.com",
+  projectId: "notas-homologacoes",
+  storageBucket: "notas-homologacoes.firebasestorage.app",
+  messagingSenderId: "480356280692",
+  appId: "1:480356280692:web:12b80642a99d70c5ef6421",
+  measurementId: "G-NKTW2HLK54"
+};
+
+    // -------------------------------------------------------
+    // 2. INICIALIZAÇÃO
+    // -------------------------------------------------------
+    
+    // Iniciar EmailJS
+    (function() { emailjs.init(EMAIL_PUBLIC_KEY); })();
+
+    // Iniciar Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const database = firebase.database();
+
+    // -------------------------------------------------------
+    // 3. LÓGICA SINCRONIZADA (O CÉREBRO DO PROGRAMA)
+    // -------------------------------------------------------
+
+    // LER TAREFAS: Fica "escutando" o banco de dados o tempo todo
+    // Sempre que você ou o Glauber mudarem algo, isso roda automaticamente
+    const listaRef = database.ref('tarefas');
+    
+    listaRef.on('value', (snapshot) => {
+        const lista = document.getElementById('listaTarefas');
+        lista.innerHTML = ''; // Limpa a tela
+        const dados = snapshot.val();
+
+        if (dados) {
+            // Transforma os dados do Firebase (Objetos) em Lista
+            Object.keys(dados).forEach((key) => {
+                const tarefa = dados[key]; // O texto da tarefa
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${tarefa} 
+                    <button class="delete-btn" onclick="removerTarefa('${key}')">X</button>
+                `;
+                lista.appendChild(li);
+            });
+            document.getElementById("statusSistema").innerText = "Sincronizado com a nuvem.";
+        } else {
+            lista.innerHTML = '<li style="text-align:center">Nenhuma pendência.</li>';
+            document.getElementById("statusSistema").innerText = "Lista vazia.";
+        }
+    });
+
+    // ADICIONAR: Envia para a nuvem
+    function adicionarTarefa() {
+        const input = document.getElementById('inputTarefa');
+        const texto = input.value;
+        if (texto === '') { alert("Escreva algo!"); return; }
+
+        // Empurra (push) para o banco de dados
+        database.ref('tarefas').push(texto);
+        input.value = ''; 
+    }
+
+    // REMOVER: Apaga da nuvem (usando a ID única 'key')
+    function removerTarefa(key) {
+        database.ref('tarefas').child(key).remove();
+    }
+
+    // -------------------------------------------------------
+    // 4. SISTEMA DE AVISOS E EMAIL (COM TRAVA DE SEGURANÇA)
+    // -------------------------------------------------------
+
+    document.addEventListener('DOMContentLoaded', () => {
+        pedirPermissaoNotificacao();
+        setInterval(verificarHorarioFixo, 60000); // Checa a cada minuto
+    });
+
+    function pedirPermissaoNotificacao() {
+        if ("Notification" in window) Notification.requestPermission();
+    }
+
+    function tocarSom() {
+        document.getElementById("somAlerta").play().catch(e => console.log("Som pendente de interação."));
+    }
+
+    // Função para ler as tarefas atuais antes de enviar
+    function pegarTarefasEEnviar() {
+        database.ref('tarefas').once('value').then((snapshot) => {
+            const dados = snapshot.val();
+            if (dados) {
+                // Converte objeto em lista de textos
+                const listaTarefas = Object.values(dados);
+                enviarEmail(listaTarefas);
+            }
+        });
+    }
+
+    function enviarEmail(tarefasArray) {
+        const listaFormatada = tarefasArray.join("\n - ");
+        const params = {
+            to_email: EMAILS_DESTINO,
+            message: listaFormatada,
+            time: new Date().toLocaleTimeString()
+        };
+
+        document.getElementById("statusSistema").innerText = "Enviando e-mail...";
+        
+        emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, params)
+            .then(() => {
+                document.getElementById("statusSistema").innerText = "E-mail enviado!";
+            });
+    }
+
+    function verificarHorarioFixo() {
+        const agora = new Date();
+        const hora = agora.getHours(); 
+        // Cria um código único para o dia e hora de hoje (Ex: "2023-11-21-10")
+        const idHoraHoje = agora.toLocaleDateString().replace(/\//g,'-') + '-' + hora;
+
+        // Só verifica se for 10h ou 16h
+        if (hora === 10 || hora === 16) {
+            
+            // Verifica na nuvem se ALGUÉM já enviou o e-mail desta hora
+            // Isso impede que o teu PC e o do Glauber enviem e-mails duplicados
+            database.ref('controle_envios').child(idHoraHoje).once('value', (snapshot) => {
+                
+                if (!snapshot.exists()) {
+                    // Ninguém enviou ainda! Vamos verificar se tem tarefas.
+                    database.ref('tarefas').once('value', (tks) => {
+                        if (tks.exists()) {
+                            console.log("Sou o primeiro a verificar. Enviando...");
+                            
+                            // 1. Toca som e notifica
+                            tocarSom();
+                            if (Notification.permission === "granted") new Notification("Aviso Pendências!");
+                            
+                            // 2. Envia Email
+                            const lista = Object.values(tks.val());
+                            enviarEmail(lista);
+
+                            // 3. MARCA NA NUVEM QUE JÁ FOI ENVIADO
+                            database.ref('controle_envios').child(idHoraHoje).set(true);
+                        }
+                    });
+                } else {
+                    console.log("O e-mail das " + hora + "h já foi enviado por outro computador.");
+                }
+            });
+        }
+    }
+
+    function forcarEnvioTeste() {
+        tocarSom();
+        pegarTarefasEEnviar();
+        alert("Disparo manual iniciado.");
+    }
+
+</script>
+</body>
+</html>
